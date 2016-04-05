@@ -130,10 +130,6 @@ coef_assess <-
 with(school, {
     c(peer = 1/sd(peer), recruit = 1/sd(recruit))
 })
-coef_assess <-
-with(school, {
-    c(peer = 1/sd(peer), recruit = 1/sd(recruit))
-})
 coef_assess <- coef_assess / sum(coef_assess)
 peer_pct <- round(100 * coef_assess["peer"])
 cat("this effectively puts a weight of ", peer_pct, "% on peer assessment",
