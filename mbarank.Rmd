@@ -282,6 +282,10 @@ for (i in seq_len(last)) {
     cat("  </tr>\n")
 }
 cat("</table>\n")
+
+write.csv(school[, cols], file = "Final Rankings.csv",
+          row.names = FALSE)
+
 ```
 
 
