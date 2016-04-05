@@ -361,7 +361,7 @@ in cities with high-paying jobs).
 
 [collection]: http://www.stern.nyu.edu/experience-stern/news-events/us-news-2017-rankings
 
-[download]: http:// "missing URL"
+[download]: https://github.com/patperry/mbarank
 
 [forensics]: https://sternoppy.com/2016/04/01/a-stern-talking-to-u-s-news-and-world-report
 
