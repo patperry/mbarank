@@ -1,0 +1,385 @@
+
+Is There a Better Way to Rank Business Schools?
+===============================================
+
+*Patrick Perry and Keith Reigert, NYU Stern School of Business -- April 4, 2016*
+
+---
+
+
+```{r, echo=FALSE}
+raw <- read.csv("USNews 2017.csv", stringsAsFactors=FALSE)
+school <-
+with(raw, {
+    usnews_rank <- US.News.Rank
+    name_full <- School
+    peer <- Peer.Assessment
+    recruit <- Recruiter.Assessment
+    gpa <- Undergrad.GPA
+    gmat <- GMAT
+    accept <- as.numeric(gsub("%", "", X2015.Full.Time.Acceptance..))
+    salary <- as.numeric(gsub("[$,]", "", X2015.Avg.Starting.Salary)) / 1000
+    employ <- as.numeric(gsub("%", "", X2015...Employed))
+    employ_3mo <- as.numeric(gsub("%", "", X..Employed.3.months.After.grad))
+    usnews_score <- USN.Score
+
+    # abbreviated school names
+    name <- name_full
+    name <- gsub("University of Illinois - Urbana-Champaign", "UIUC", name)
+    name <- gsub("University of Connecticut", "UConn", name)
+    name <- gsub("George Washington University", "GW", name)
+    name <- gsub("Rutgers, The State University of New Jersey", "Rutgers", name)
+    name <- gsub("University at Buffalo - SUNY", "SUNY Buffalo", name)
+    name <- gsub("Binghamton University - SUNY", "SUNY Binghamton", name)
+    name <- gsub("^.*[(](.*)[)]$", "\\1", name) # use parenthesized names
+    name <- gsub(" University$", "", name) # remove training 'University'
+    name <- gsub("^University of (.).* -", "U\\1", name) # shorten names
+    name <- gsub("^University of ([^-]*)$", "\\1", name)
+
+    data.frame(name_full, name, peer, recruit, gpa, gmat, accept, salary,
+               employ, employ_3mo, usnews_score, usnews_rank,
+               stringsAsFactors = FALSE)
+})
+```
+
+A lot of people at Stern are angry about the [data collection
+error][collection] that caused the school's [*U.S. News and World Report*
+full-time MBA program ranking][rankings] to drop from #11 last year to #20 this
+year. Stern failed to report the number of students that submitted GMAT scores
+to the school, and rather than alert the school to this omission, *U.S. News*
+chose to estimate the missing value. Some [forensic data
+analysis][forensics], shows that the omission caused *U.S. News* to
+effectively replace Stern's average GMAT score (720) with a much lower value
+(560). We don't definitively know that this is what happened, but the evidence
+is compelling.
+
+
+The missing-data debacle got us interested more generally about how business
+school rankings are determined in the first place. *U.S. News* [describes
+the process on their website][methodology]. They measure a set of eight
+attributes for each school and then reduce these eight values to a single
+numerical score by taking a weighted combination.
+Some people have taken issue with the [sensitivity of rankings][lawrank] to
+the specific choices of weights used to combine the individual attributes.
+These critics certainly have a point, but to us, the more fundamental issue is
+that many of the measurements that *U.S. News* uses to rank business
+schools are themselves problematic.
+
+
+While attributes like "Mean Starting Salary" and "Mean Undergraduate GPA" are,
+without a doubt, useful for prospective students deciding whether to apply to
+a school (and for assessing their chances of being accepted), these attributes
+may not have much to say about the quality of a school itself. Here is a
+breakdown of some of the specific measurement issues we see:
+
+  + **Mean Starting Salary**, a measure of the mean salary of students
+    entering the workforce after graduation, is informative for
+    students considering the return on investment of attending a certain
+    school, but it tends to be more a function of geography and student
+    career choice than school quality.
+
+  + **Employment Rate at Graduation** and **Employment Rate Three Months After
+    Graduation**, again are informative and relevant for students considering a
+    program's return on investment, but they have little bearing on the value of
+    the school. Furthermore, at a time when many of the nation's top schools
+    are fostering innovation and entrepreneurship programs (straying from the
+    traditional "corporate recruiting model" of MBA programs), these attributes     may be outdated.
+
+  + **Mean Undergraduate GPA** is not comparable across different applicant
+    pools (a 3.0 GPA from Harvard doesn't mean the same thing as a 3.0 GPA
+    from DeVry).
+
+  + **Acceptance Rate** is not comparable for schools with different
+    enrollments (Harvard enrolls roughly 1900 students; Stanford enrolls 800;
+    Haas enrolls 500). Furthermore, shifting national trends in the number
+    and quantity of business school applications each year can have varying
+    affects on schools, unrelated to school quality (for example, over the
+    past few years, there has been a national decline in the number of
+    applicants to part-time MBA programs, but schools located in or near
+    Silicon Valley have been less affected by this trend).
+
+It's likely that *U.S. News* tries to adjust these measurements to fix some of
+the issues mentioned above, but it is not clear how they are doing this or how
+effective these adjustments are.
+
+
+For ranking the "best" business schools, there are three attributes that, while
+by no means perfect, seem to be more trustworthy: 
+
+  + **Mean GMAT Score** measures the quality of the student body at
+    the start of the MBA. This also quantifies the perceived value of
+    the school to each year's incoming class (the higher a student’s GMAT score,
+    the more potential program options they have for getting their MBA).
+
+  + **Peer Assessment Score** and **Recruiter Assessment Score** both
+    measure the quality of the student body at the end of the MBA. The former
+    is based on business school deans' ratings of their competitors, and
+    the latter is based on corporate recruiters' and company contacts'
+    assessments.
+
+We don't have much insight into the different psychologies of
+business school deans and corporate recruiters, but empirically, "Peer
+Assessment" and "Recruiter Assessment" are strongly correlated with each other
+(correlation 0.83) and it seems to us like these numbers are two different
+measurements of the same attribute. To combine both into a single
+"Combined Assessment Score", we standardize each to have the same standard
+deviation and take the average of the two numbers. To make the result more
+interpretable, we transform back to the original 1-5 scale;
+```{r, echo=FALSE, results='asis'}
+coef_assess <-
+with(school, {
+    c(peer = 1/sd(peer), recruit = 1/sd(recruit))
+})
+coef_assess <-
+with(school, {
+    c(peer = 1/sd(peer), recruit = 1/sd(recruit))
+})
+coef_assess <- coef_assess / sum(coef_assess)
+peer_pct <- round(100 * coef_assess["peer"])
+cat("this effectively puts a weight of ", peer_pct, "% on peer assessment",
+    " and ", 100 - peer_pct, "% on recruiter assessment.\n", sep="")
+school$assess <-
+with(school, {
+    coef_assess["peer"] * peer + coef_assess["recruit"] * recruit
+})
+```
+
+
+
+Here's a scatter plot of the "Mean GMAT Score" and "Combined Assessment Score"
+for the ranked *U.S. News* business schools.  Each point represents a school,
+with the *x* and *y* coordinates giving the respective attribute values.
+(Three schools have average GMAT scores below 600, and they have been excluded
+from this plot.)
+
+```{r, echo=FALSE}
+# aspect ratio chosen to make the dashed line bank at 45 degrees
+asp <- with(subset(school, gmat > 600),
+            (diff(range(assess)) / sd(assess))
+             / (diff(range(gmat)) / sd(gmat)))
+```
+
+```{r, echo=FALSE, fig.width=8, fig.height=8 * asp}
+# scatter plot
+with(subset(school, gmat > 600), {
+    plot(gmat, assess, xlab="Mean GMAT Score",
+         ylab="Combined Assessment Score", cex = 0.5, las=1)
+    axis(3, labels=FALSE)
+    axis(4, labels=FALSE)
+    text(gmat, assess, name, adj=c(0.5,-0.5), cex = 0.8)
+    abline(a = mean(assess) - sd(assess) / sd(gmat) * mean(gmat),
+           b = sd(assess) / sd(gmat),
+           lty = 2)
+})
+```
+
+
+If we want to use these two attributes to rank the schools, there is a natural
+choice, which is to rescale the attributes appropriately and then give each
+equal weight. (This process has a geometric interpretation, which is that each
+point in the scatter plot gets mapped to the closest spot on the dashed line,
+preserving as much of the variability in the data as possible.)
+
+
+Rescaling is necessary because GMAT scores (ranging from 200-800) are not
+directly comparable to assessment scores (ranging from 1-5). To make the
+values comparable, we subtract off the mean of each attribute and divide by
+its standard deviation. This ensures that each rescaled attribute has
+mean 0 and standard deviation 1. We then give each rescaled attribute a weight
+of 50%. To make the values more interpretable, after we compute the
+scores, we re-center and rescale them to have mean 75 and standard deviation 10,
+then round the values. The rounding process induces some ties between schools,
+but otherwise this transformation does not affect the final ranking.
+
+
+```{r, echo=FALSE}
+school$score_unscaled <-
+with(school, {
+    as.numeric(0.5 * scale(gmat) + 0.5 * scale(assess))
+})
+school$score_unrounded <-
+with(school, {
+    as.numeric(10 * scale(score_unscaled) + 75)
+})
+school$score <- round(school$score_unrounded, 1)
+school$rank <- rank(-school$score, ties = "min")
+school <- school[order(-school$score),]
+rownames(school) <- NULL
+```
+
+The final formula for determining a school's score is
+```{r, echo=FALSE, results='asis'}
+coef <-
+with(school, {
+    intercept_unscaled <- -(0.5 * mean(gmat) / sd(gmat)
+                            + 0.5 * mean(assess) / sd(assess))
+    coef_unscaled <- c(gmat = 0.5 / sd(gmat), assess = 0.5 / sd(assess))
+    coef <- coef_unscaled
+
+    intercept <- (75
+                  + 10 * ((intercept_unscaled - mean(score_unscaled))
+                          / sd(score_unscaled)))
+    coef <- 10 * coef_unscaled / sd(score_unscaled)
+    coef_full <- c("(Intercept)" = intercept,
+                   "gmat" = coef[["gmat"]],
+                   "peer" = coef[["assess"]] * coef_assess[["peer"]],
+                   "recruit" = coef[["assess"]] * coef_assess[["recruit"]])
+    coef_full
+})
+
+terms <- c("gmat", "peer", "recruit")
+terms_digits <- c(gmat = 3, peer = 2, recruit = 2)
+terms_full <- c(gmat = "Mean GMAT", peer = "Peer Assessment",
+                recruit = "Recruiter Assessment")
+
+cat("\n\n")
+cat("    (Simplified Score) = ", round(coef[["(Intercept)"]], 3))
+for (j in terms) {
+    cat(ifelse(coef[[j]] < 0, " - ", " + "))
+    cat(round(coef[[j]], terms_digits[[j]]))
+    cat(" (", terms_full[[j]], ")", sep="")
+}
+cat("\n\n")
+```
+
+
+The following table shows the rank and score for the top 50 schools as
+determined by this simplified method. We've also included the
+mean GMAT scores, the assessment scores, and the aggregate scores
+and rankings as reported by *U.S. News*.
+
+```{r, echo=FALSE, results='asis'}
+tab <- format(school)
+cols <- c("rank", "name_full", "peer", "recruit", "gmat", "score",
+          "usnews_score", "usnews_rank")
+disp <- c(rank = "Rank", name_full = "School",
+          peer = "Peer<br/>Assessment",
+          recruit = "Recruiter<br/>Assessment",
+          gmat = "Mean<br/>GMAT",
+          score = "Simplified<br/>Score",
+          usnews_score = "<i>U.S. News</i></br>Score",
+          usnews_rank = "<i>U.S. News</i></br>Rank")
+align <- c(rank="center", name_full="left",
+           peer="center", recruit="center", gmat="center",
+           score="center", usnews_rank="center", usnews_score="center")
+
+cat("<table align=\"center\">\n")
+cat("  <tr>\n")
+for (j in cols) {
+    cat("    <th align=\"", align[j], "\">", sep="")
+    cat(disp[j])
+    cat("</th>\n")
+}
+cat("  </tr>\n")
+for (i in seq_len(min(50, nrow(school)))) {
+    cat("  <tr>\n")
+    for (j in cols) {
+        cat("    <td align=\"", align[j], "\">", sep="")
+        cat(tab[i,j])
+        cat("</td>\n")
+    }
+    cat("  </tr>\n")
+}
+cat("</table>\n")
+```
+
+
+The simplified GMAT/assessment ranking method gives reasonable results,
+comparable to *U.S. News* in most cases.  The *U.S. News* ranking method is
+much more complicated.  Which ranking is better? We're obviously biased, but
+in this situation, like in most other situations, we prefer the simpler
+method.  With the *U.S. News* system, we have concerns about many of the
+inputs, and we don't have much confidence in the weights used to compute the
+final scores.  With the simplified method based on GMAT and assessment, we
+have confidence in all of the inputs and we can understand how they relate to
+the final score.
+
+
+---
+
+<small>
+
+Patrick Perry ([@ptrckprry][perry]) is an Assistant Professor of Information,
+Operations, and Management Sciences at NYU Stern.
+
+
+Keith Reigert ([@KeithRiegert][riegert]) is an MBA candidate at NYU Stern and
+an editor at the [*Stern Opportunity*][sternoppy].
+
+The raw data used to compute the rankings, was originally collected and
+reported by *U.S.  News*.  The plot and the table in this article were
+produced using the [R software envionment][rstats].  The data and source code
+are [available for download][download].
+
+</small>
+
+
+---
+
+Appendix
+--------
+
+### Quality measures
+
+To validate our intuition that many of the factors used in the *U.S.
+News* ranking are poor proxies for school quality, we looked at scatter plots
+of all seven attributes versus the schools' mean GMAT scores.  In these plots,
+each point represents a school.
+
+```{r, fig.height=14, fig.width=14, echo=FALSE}
+par(mfrow=c(3,3))
+with(school, {
+    plot(gmat, salary, xlab="Mean GMAT Score",
+         ylab="Mean Starting Salary ($1K)")
+    plot(gmat, employ, xlab="Mean GMAT Score",
+         ylab="Emp. Rate at Graduation (%)")
+    plot(gmat, employ_3mo, xlab="Mean GMAT Score",
+         ylab="Emp. Rate 3mo. After Graduation (%)")
+    plot(gmat, peer, xlab="Mean GMAT Score",
+         ylab="Peer Assessment Score")
+    plot(gmat, recruit, xlab="Mean GMAT Score",
+         ylab="Recruiter Assessment Score")
+    plot(gmat, gpa, xlab="Mean GMAT Score", ylab="Mean Undergrad. GPA")
+    plot(gmat, accept, xlab="Mean GMAT Score", ylab="Accept. Rate (%)")
+})
+
+```
+
+From these plots, it is clear that "Employment Rate at Graduation",
+"Employment Rate Three Months After Graduation", "Mean Undergraduate GPA", and
+"Acceptance Rate" are poor measures of school quality in that they appear only
+slightly related to "Mean GMAT Score" (arguably the most reliable measure of
+school quality).
+
+
+Despite its strong relationship with "Mean GMAT Score", we still feel
+uncomfortable including "Mean Starting Salary" as a ranking factor due to its
+strong dependence on geography (the highest quality schools tend to be located
+in cities with high-paying jobs).
+
+
+
+[collection]: http://www.stern.nyu.edu/experience-stern/news-events/us-news-2017-rankings
+
+[download]: http:// "missing URL"
+
+[forensics]: https://sternoppy.com/2016/04/01/a-stern-talking-to-u-s-news-and-world-report
+
+[gladwell]: http://www.newyorker.com/magazine/2011/02/14/the-order-of-things
+
+[lawrank]: http://monoborg.law.indiana.edu/LawRank/
+
+[methodology]: http://www.usnews.com/education/best-graduate-schools/articles/business-schools-methodology
+
+[pca]: https://en.wikipedia.org/wiki/Principal_component_analysis
+
+[perry]: http://twitter.com/ptrckprry
+
+[rankings]: http://grad-schools.usnews.rankingsandreviews.com/best-graduate-schools/top-business-schools
+
+[riegert]: http://twitter.com/KeithRiegert
+
+[rstats]: https://www.r-project.org/
+
+[sternoppy]: http://www.sternoppy.com 
+
