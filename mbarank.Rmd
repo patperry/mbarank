@@ -307,7 +307,7 @@ Operations, and Management Sciences at NYU Stern.
 Keith Reigert ([@KeithRiegert][riegert]) is an MBA candidate at NYU Stern and
 an editor at the [*Stern Opportunity*][sternoppy].
 
-The raw data used to compute the rankings, was originally collected and
+The raw data used to compute the rankings was originally collected and
 reported by *U.S.  News*.  The plot and the table in this article were
 produced using the [R software envionment][rstats].  The data and source code
 are [available for download][download].
