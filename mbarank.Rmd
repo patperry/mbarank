@@ -117,14 +117,14 @@ by no means perfect, seem to be more trustworthy:
     the latter is based on corporate recruiters' and company contacts'
     assessments.
 
-We don't have much insight into the different psychologies of
-business school deans and corporate recruiters, but empirically, "Peer
-Assessment" and "Recruiter Assessment" are strongly correlated with each other
-(correlation 0.83) and it seems to us like these numbers are two different
-measurements of the same attribute. To combine both into a single
-"Combined Assessment Score", we standardize each to have the same standard
-deviation and take the average of the two numbers. To make the result more
-interpretable, we transform back to the original 1-5 scale;
+We don't have much insight into the different psychologies of business school
+deans and corporate recruiters, but empirically, "Peer Assessment" and
+"Recruiter Assessment" are strongly correlated with each other (correlation
+`r round(cor(school$peer, school$recruit), 2)`) and it seems to us like these
+numbers are two different measurements of the same attribute. To combine both
+into a single "Combined Assessment Score", we standardize each to have the
+same standard deviation and take the average of the two numbers. To make the
+result more interpretable, we transform back to the original 1-5 scale;
 ```{r, echo=FALSE, results='asis'}
 coef_assess <-
 with(school, {
