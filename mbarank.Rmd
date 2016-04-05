@@ -243,7 +243,7 @@ cat("\n\n")
 ```
 
 
-The following table shows the rank and score for the top 50 schools as
+The following table shows the rank and score for the top 30 schools as
 determined by this simplified method. We've also included the
 mean GMAT scores, the assessment scores, and the aggregate scores
 and rankings as reported by *U.S. News*.
@@ -271,7 +271,8 @@ for (j in cols) {
     cat("</th>\n")
 }
 cat("  </tr>\n")
-for (i in seq_len(min(50, nrow(school)))) {
+last <- max(which(school$rank <= 30))
+for (i in seq_len(last)) {
     cat("  <tr>\n")
     for (j in cols) {
         cat("    <td align=\"", align[j], "\">", sep="")
