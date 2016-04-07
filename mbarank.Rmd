@@ -232,7 +232,7 @@ cat("\n\n")
 cat("    (Simplified Score) = ", round(coef[["(Intercept)"]], 3))
 for (j in terms) {
     cat(ifelse(coef[[j]] < 0, " - ", " + "))
-    cat(round(coef[[j]], terms_digits[[j]]))
+    cat(round(abs(coef[[j]]), terms_digits[[j]]))
     cat(" (", terms_full[[j]], ")", sep="")
 }
 cat("\n\n")
