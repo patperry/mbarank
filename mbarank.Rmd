@@ -210,12 +210,12 @@ with(school, {
     intercept_unscaled <- -(0.5 * mean(gmat) / sd(gmat)
                             + 0.5 * mean(assess) / sd(assess))
     coef_unscaled <- c(gmat = 0.5 / sd(gmat), assess = 0.5 / sd(assess))
-    coef <- coef_unscaled
 
     intercept <- (75
                   + 10 * ((intercept_unscaled - mean(score_unscaled))
                           / sd(score_unscaled)))
     coef <- 10 * coef_unscaled / sd(score_unscaled)
+
     coef_full <- c("(Intercept)" = intercept,
                    "gmat" = coef[["gmat"]],
                    "peer" = coef[["assess"]] * coef_assess[["peer"]],
